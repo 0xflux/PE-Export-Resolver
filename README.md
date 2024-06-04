@@ -2,12 +2,15 @@
 
 This tool is a cyber security library to resolve function pointers to loaded modules in memory, such as functions provided by Windows DLL's (or any other DLL with exported functions). May only be used where you have legal permission from the system owner to use this. 
 
+Available at [crates.io](https://crates.io/crates/export-resolver).
+
 # Usage
 
+ - Install via: `cargo add export-resolver` or add `export-resolver = "1.0.2"` to your `Cargo.toml`.
  - The library is instantiated with `::new()`.
  - When you wish to use a pointer to the required function in your code, you can simply use `.add` to resolve that function at runtime, it will then append the function virtual address to a vector of your resolved exports (all added with the `.add` function)
- - To then get the function pointer, you can use the `get_function_address` function, which will return an Result of a `usize`, where the usize is the memory address.
- - Valid only for x64.
+ - To then get the function pointer, you can use the `get_function_address` function, which will return an Result of a `usize`, where the `usize` is the memory address.
+ - Valid only for **x64**.
 
 # Example
 
