@@ -2,7 +2,17 @@
 name = "export-resolver"
 version = "1.0.0"
 edition = "2021"
+authors = ["Flux Sec <fluxsec@proton.me>"]
+description = "A PE (Portable Executable) parser which will dynamically resolve virtual addresses of functions loaded in a PE. It will store these function virtual addresses in a structure for retrieval at the developers behest."
+license = "MIT"
+repository = "https://github.com/0xflux/PE-Export-Resolver"
+documentation = "https://docs.rs/PE-Export-Resolver"
+readme = "README.md"
+keywords = ["PE", "export", "EAT", "cyber"]
 
 [dependencies]
 
 windows = { version = "0.56.0", features = ["Win32_System_Threading", "Win32_Security", "Win32_System_LibraryLoader", "Win32_System_Diagnostics", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel", "Win32_System_WindowsProgramming", "Win32_System_SystemServices", "Win32_System_SystemInformation" ] }
+
+[lib]
+crate-type = ["lib"] 
