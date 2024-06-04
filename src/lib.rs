@@ -20,7 +20,7 @@ struct ExportResolver<'a> {
 /// within the memory space of the process this is called from. 
 /// 
 /// <section class="warning">
-/// *IMPORTANT:* This tool may only be used for ethical, research or legal purposes. There is a massive learning benefit
+/// **IMPORTANT:** This tool may only be used for ethical, research or legal purposes. There is a massive learning benefit
 /// to exploring this tool, or using it as part of a debugging process when reverse engineering malware or other tools.
 /// 
 /// This tool may also be used for red teamer's and penetration testers where you have the LAWFUL AUTHORITY to use this tool,
@@ -28,6 +28,29 @@ struct ExportResolver<'a> {
 /// 
 /// Tool only works on x64 by design.
 /// </section>
+/// 
+/// # Example
+/// 
+/// ```rust
+/// fn main() {
+/// 
+///     // Create a new instance of the ExportList
+///     let mut exports = ExportList::new();
+///     
+///     // Add the desired functions to the ExportList structure, this will resolve and save the virtual addresses
+///     // These calls may cause an Error if the function cannot be found; .add returns Result<(), ExportError>
+///     let _ = exports.add("ntdll.dll", "NtOpenProcess");
+///     let _ = exports.add("ntdll.dll", "NtQuerySystemTime");
+/// 
+///     // Attempt to get the virtual address; returns returns Result<(), ExportError> - an error will be returned where
+///     // the input function name cannot be found in the vector of resolved functions (i.e. if the above step failed)
+///     // or you have a typo.
+///     let _nt = match exports.get_function_address("NtOpenProcess") {
+///         Ok(v) => println!("NT: {:x}", v),
+///         Err(e) => println!("Eeee {}", e),
+///     };
+/// }
+/// ```
 pub struct ExportList<'a> {
     list: Vec<ExportResolver<'a>>,
 }
