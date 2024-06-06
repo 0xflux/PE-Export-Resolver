@@ -1,6 +1,6 @@
 [package]
 name = "export-resolver"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 authors = ["Flux Sec <fluxsec@proton.me>"]
 description = "A PE (Portable Executable) parser which will dynamically resolve virtual addresses of functions loaded in a PE. It will store these function virtual addresses in a structure for retrieval at the developers behest."

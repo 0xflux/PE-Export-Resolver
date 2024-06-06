@@ -11,6 +11,7 @@ use std::fmt;
 /// into the portable executable on x64 systems only.
 struct ExportResolver<'a> {
     module: &'a str,
+    base_address: usize, // to prevent repeat reads of the peb
     function: &'a str,
     address: usize,
 }
@@ -92,7 +93,7 @@ impl<'a> ExportList<'a> {
     /// Instantiate a new instance of the export list
     pub fn new() -> ExportList<'a> {
         ExportList {
-            list: Vec::new()
+            list: Vec::new(),
         }
     }
 
@@ -108,19 +109,32 @@ impl<'a> ExportList<'a> {
     /// </section>
     pub fn add(&mut self, module: &'a str, function: &'a str) -> Result<(), ExportError> {
 
-        let fn_address = get_function_from_exports(module, function)
-        .ok_or_else(|| ExportError::FunctionNotFound {
-            module: module.to_string(),
-            function: function.to_string(),
-        })?;
+        for item in &self.list {
+            // if we have already resolved the module, then skip straight to it
+            if item.module == module {
+                let result = get_function_from_exports(module, function, Some(item.base_address))
+                    .ok_or_else(|| ExportError::FunctionNotFound {
+                        module: module.to_string(),
+                        function: function.to_string(),
+                    })?;
 
-        self.list.push(ExportResolver {
-            module,
-            function,
-            address: fn_address as usize,
-        });
+                self.list.push(result);
+        
+                return Ok(());
+            }
+        }
+
+        // if we made it this far, there was no match in the current exports
+        let result = get_function_from_exports(module, function, None)
+            .ok_or_else(|| ExportError::FunctionNotFound {
+                module: module.to_string(),
+                function: function.to_string(),
+            })?;
+
+        self.list.push(result);
 
         Ok(())
+        
     } 
 
     /// Get the function address of a function you have added to the vector of exports as a usize. This
@@ -188,7 +202,7 @@ fn get_module_base(module_name: &str) -> Option<usize> {
                 }
 
             } else {
-                println!("Invalid module name address or length.");
+                return None;
             }
 
             // dereference current_entry which contains the value of the next LDR_DATA_TABLE_ENTRY (specifically a pointer to LIST_ENTRY 
@@ -211,13 +225,21 @@ fn get_module_base(module_name: &str) -> Option<usize> {
 /// 
 /// # Returns
 /// Option<*const c_void> -> the function address as a pointer
-fn get_function_from_exports(dll_name: &str, needle: &str) -> Option<*const c_void> {
+fn get_function_from_exports<'a>(dll_name: &'a str, needle: &'a str, dll_base: Option<usize>) -> Option<ExportResolver<'a>> {
 
-    // get the dll base address
-    let dll_base = match get_module_base(dll_name) {
-        Some(a) => a,
-        None => panic!("Unable to get address"),
-    } as *mut c_void;
+    // if the dll_base was already found from a previous search then use that
+    // otherwise, if it was None, make a call to get_module_base
+    let dll_base: *mut c_void = match dll_base {
+        Some(base) => base as *mut c_void,
+        None => {
+            match get_module_base(dll_name) {
+                Some(a) => a as *mut c_void,
+                None => {
+                    return None;
+                },
+            }
+        },
+    };
 
     // check we match the DOS header, cast as pointer to tell the compiler to treat the memory
     // address as if it were a IMAGE_DOS_HEADER structure
@@ -283,7 +305,14 @@ fn get_function_from_exports(dll_name: &str, needle: &str) -> Option<*const c_vo
             // actual memory address of the function address
             let fn_addr = unsafe { dll_base.add(fn_rva) } as *const c_void;
 
-            return Some(fn_addr);
+            let result = ExportResolver {
+                module: dll_name,
+                base_address: dll_base as usize,
+                function: needle,
+                address: fn_addr as usize,
+            };
+
+            return Some(result);
         }
     }
 
